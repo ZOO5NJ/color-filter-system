@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Code Filter System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        'primary': '#6366f1',
+        'primary-dark': '#4f46e5',
+        'primary-light': '#818cf8',
+        'accent': '#f59e0b',
+        'success': '#10b981',
+        'danger': '#ef4444',
+        'neutral-900': '#1e293b',
+        'neutral-800': '#334155',
+        'neutral-700': '#475569',
+        'neutral-600': '#64748b',
+        'neutral-500': '#94a3b8',
+        'neutral-400': '#cbd5e1',
+        'neutral-300': '#e2e8f0',
+        'neutral-200': '#f1f5f9',
+        'neutral-100': '#f8fafc',
+      },
+      fontFamily: {
+        'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'mono': ['JetBrains Mono', 'monospace'],
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        }
+      }
+    }
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+  
+  .glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .glass-dark {
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .color-swatch:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  
+  .color-swatch.active {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 4px #6366f1, 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  
+  .table-row {
+    transition: all 0.3s ease;
+  }
+  
+  .table-row:hover {
+    background: rgba(99, 102, 241, 0.08);
+    transform: translateX(4px);
+  }
+  
+  .filter-chip {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .filter-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .filter-chip.active {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+  }
+  
+  .search-input:focus {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.5);
+    border-radius: 10px;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.5);
+    border-radius: 10px;
+  }
+  
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+  }
+  
+  .bg-pattern {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+  
+  .highlight-text {
+    background: linear-gradient(120deg, transparent 0%, transparent 50%, rgba(245, 158, 11, 0.3) 50%, rgba(245, 158, 11, 0.3) 100%);
+    background-size: 200% 100%;
+    background-position: 0 0;
+    transition: background-position 0.3s ease;
+  }
+  
+  .highlight-text.active {
+    background-position: -100% 0;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+</style>
+</head>
+<body class="bg-pattern min-h-screen">
+
+<!-- Header -->
+<header class="glass-dark sticky top-0 z-50 shadow-2xl">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg">
+          <i class="fas fa-palette text-white text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-white">Color Code Filter System</h1>
+          <p class="text-sm text-neutral-400">Glass Door Panel Color Management</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-2 text-sm text-neutral-300">
+          <i class="fas fa-circle text-success text-xs"></i>
+          <span>System Active</span>
+        </div>
+        <div class="glass px-4 py-2 rounded-xl">
+          <span class="text-sm font-semibold text-neutral-700" id="totalCount">0</span>
+          <span class="text-xs text-neutral-500 ml-1">records</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+  <!-- Search & Filter Section -->
+  <div class="glass rounded-3xl p-6 shadow-2xl animate-slide-up">
+    <div class="space-y-6">
+      
+      <!-- Search Bar -->
+      <div>
+        <label class="block text-sm font-semibold text-neutral-700 mb-3">
+          <i class="fas fa-search mr-2 text-primary"></i>
+          Search by Color Code
+        </label>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Enter color code, e.g. VZF07338_G, RAL9005..."
+            class="search-input w-full px-5 py-4 pl-14 pr-32 text-base bg-neutral-100 border-2 border-neutral-200 rounded-2xl focus:outline-none focus:border-primary transition-all duration-300 font-mono"
+          >
+          <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400 text-lg"></i>
+          <button 
+            id="clearBtn" 
+            class="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 text-sm font-medium text-neutral-500 hover:text-danger transition-colors rounded-lg hover:bg-danger/10"
+          >
+            <i class="fas fa-times mr-1"></i>Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Filter Chips -->
+      <div>
+        <label class="block text-sm font-semibold text-neutral-700 mb-3">
+          <i class="fas fa-bolt mr-2 text-accent"></i>
+          Quick Filters
+        </label>
+        <div class="flex flex-wrap gap-2" id="quickFilters">
+          <button class="filter-chip active px-4 py-2 rounded-xl text-sm font-medium border-2 border-neutral-200 bg-white text-neutral-700" data-filter="all">
+            <i class="fas fa-th mr-1"></i>All
+          </button>
+          <button class="filter-chip px-4 py-2 rounded-xl text-sm font-medium border-2 border-neutral-200 bg-white text-neutral-700" data-filter="Fanhua">
+            <i class="fas fa-industry mr-1"></i>Fanhua
+          </button>
+          <button class="filter-chip px-4 py-2 rounded-xl text-sm font-medium border-2 border-neutral-200 bg-white text-neutral-700" data-filter="Xiuqiang">
+            <i class="fas fa-industry mr-1"></i>Xiuqiang
+          </button>
+          <button class="filter-chip px-4 py-2 rounded-xl text-sm font-medium border-2 border-neutral-200 bg-white text-neutral-700" data-filter="Sinca">
+            <i class="fas fa-industry mr-1"></i>Sinca
+          </button>
+          <button class="filter-chip px-4 py-2 rounded-xl text-sm font-medium border-2 border-neutral-200 bg-white text-neutral-700" data-filter="Bluewhale">
+            <i class="fas fa-industry mr-1"></i>Bluewhale
+          </button>
+        </div>
+      </div>
+
+      <!-- Color Swatches Quick Select -->
+      <div>
+        <label class="block text-sm font-semibold text-neutral-700 mb-3">
+          <i class="fas fa-palette mr-2 text-primary"></i>
+          Quick Color Select
+        </label>
+        <div class="flex flex-wrap gap-4" id="colorSwatches">
+          <!-- Color swatches will be generated here -->
+        </div>
+      </div>
+
+      <!-- Advanced Filters -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-neutral-200">
+        <div>
+          <label class="block text-xs font-semibold text-neutral-600 mb-2 uppercase tracking-wide">Supplier</label>
+          <select id="supplierFilter" class="w-full px-4 py-3 bg-neutral-100 border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-primary transition-all text-sm">
+            <option value="">All Suppliers</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-neutral-600 mb-2 uppercase tracking-wide">Sort By</label>
+          <select id="sortFilter" class="w-full px-4 py-3 bg-neutral-100 border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-primary transition-all text-sm">
+            <option value="code-asc">Color Code A-Z</option>
+            <option value="code-desc">Color Code Z-A</option>
+            <option value="date-desc">Release Date (Newest)</option>
+            <option value="date-asc">Release Date (Oldest)</option>
+            <option value="name-asc">Color Name A-Z</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-neutral-600 mb-2 uppercase tracking-wide">View Mode</label>
+          <div class="flex gap-2">
+            <button id="viewTable" class="flex-1 px-4 py-3 bg-primary text-white rounded-xl text-sm font-medium transition-all">
+              <i class="fas fa-table mr-1"></i>Table
+            </button>
+            <button id="viewCard" class="flex-1 px-4 py-3 bg-neutral-100 text-neutral-600 rounded-xl text-sm font-medium transition-all hover:bg-neutral-200">
+              <i class="fas fa-th-large mr-1"></i>Cards
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="glass rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
+    <!-- Table View -->
+    <div id="tableView" class="overflow-x-auto scrollbar-custom">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-gradient-to-r from-neutral-800 to-neutral-700 text-white">
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-palette"></i>
+                <span>Color</span>
+              </div>
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-barcode"></i>
+                <span>Color Code</span>
+              </div>
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-tag"></i>
+                <span>Color Name</span>
+              </div>
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-industry"></i>
+                <span>Supplier</span>
+              </div>
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-calendar"></i>
+                <span>Latest Release Time</span>
+              </div>
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-link"></i>
+                <span>Related RP for Glass Panel</span>
+              </div>
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-vial"></i>
+                <span>BE Test RP</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="resultsTable" class="divide-y divide-neutral-200">
+          <!-- Results will be populated here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Card View -->
+    <div id="cardView" class="hidden p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Cards will be populated here -->
+    </div>
+
+    <!-- No Results -->
+    <div id="noResults" class="hidden py-20 text-center">
+      <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center">
+        <i class="fas fa-search text-4xl text-neutral-300"></i>
+      </div>
+      <h3 class="text-lg font-semibold text-neutral-700 mb-2">No Matching Results Found</h3>
+      <p class="text-sm text-neutral-500">Try different keywords or clear filter conditions</p>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="glass rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-custom shadow-2xl animate-slide-up">
+      <div class="sticky top-0 glass px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+        <h3 class="text-lg font-bold text-neutral-800">Detail Information</h3>
+        <button id="closeModal" class="w-10 h-10 rounded-full hover:bg-neutral-100 flex items-center justify-center transition-colors">
+          <i class="fas fa-times text-neutral-500"></i>
+        </button>
+      </div>
+      <div id="modalContent" class="p-6">
+        <!-- Modal content will be populated here -->
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="glass-dark mt-12 py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2 text-neutral-400 text-sm">
+        <i class="fas fa-shield-alt"></i>
+        <span>Data Protected</span>
+      </div>
+      <div class="text-neutral-500 text-sm">
+        © 2024 Color Code Filter System | Glass Door Panel Color Management
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Color data from attachment
+const colorData = [
+  {
+    code: "VZF07338_G",
+    name: "Snow Silver",
+    color: "#E8E8E8",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "3/9/2026", rp: "6010007WUB/A-Glass door panel SE VZF07338_G slot-in 90", beTestRp: "60100078YP/A-BSH_RawMaterial_RP_F-glass_VZF07338_3.2mm_organic_FH" },
+      { name: "Sinca", releaseTime: "", rp: "", beTestRp: "6010008C11/A-BSH_RawMaterial_RP_F-glass_VZF07338_G_3.2mm_organic_SI" }
+    ]
+  },
+  {
+    code: "VZF07352_GT",
+    name: "Paper Matt",
+    color: "#F5F0E8",
+    suppliers: [
+      { name: "Xiuqiang", releaseTime: "11/28/2025", rp: "6010007S0G/A-Glass door panel MD85 CD VZF07352_GT", beTestRp: "6010007NQL/A-BSH_RawMaterial_RP_F-glass_VZF07352_3.2mm_organic_XQ" }
+    ]
+  },
+  {
+    code: "VZF07348_G",
+    name: "White matt",
+    color: "#F8F8F8",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "", rp: "", beTestRp: "601000899Q/A-BSH_RawMaterial_RP_F-glass_VZF07348_3.2mm_organic_FH" },
+      { name: "Xiuqiang", releaseTime: "7/7/2026", rp: "6010007YNG/B-Door Complete/foamed GL AG VZF07348_G_MD90P-fit", beTestRp: "6010007NQJ/A-BSH_RawMaterial_RP_F-glass_VZF07348_3.2mm_organic_XQ" }
+    ]
+  },
+  {
+    code: "VZF07020",
+    name: "White",
+    color: "#FFFFFF",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "3/9/2026", rp: "6010007WUC/A-Glass door panel SE VZF07020 slot-in 90", beTestRp: "6010003G1L/A-Printed Glass White VZF07020" },
+      { name: "Xiuqiang", releaseTime: "", rp: "", beTestRp: "6010003KWZ/A-BE_Printed Glass White with Grey VZF07020+VZF07151" },
+      { name: "Sinca", releaseTime: "10/23/2024", rp: "60100060PD/B-Glass door panel BO VZF07020", beTestRp: "601000764K/A-BE_Printed Glass White VZF07020_Sinca" }
+    ]
+  },
+  {
+    code: "VZF07335_G",
+    name: "Latte White",
+    color: "#E8DCC8",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "3/9/2026", rp: "6010007WUE/A-Glass door panel BO VZF7335_G slot-in 90", beTestRp: "6010006X4A/A-BE_Printed Glass Latte White VZF07335_FH" },
+      { name: "Sinca", releaseTime: "", rp: "", beTestRp: "60100074RW/A-BE_Printed Glass Latte White VZF07335_SI" }
+    ]
+  },
+  {
+    code: "VZF07332_G",
+    name: "Stellar Silver",
+    color: "#C0C0C0",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "", rp: "", beTestRp: "6010007WCQ/A-BSH_RawMaterial_RP_F-glass_VZF07332_3.2mm_organic_FH" },
+      { name: "Xiuqiang", releaseTime: "9/24/2025", rp: "6010007NLC/A-Glass door panel EP85 SE VZF07332_G", beTestRp: "601000793C/A-BSH_RawMaterial_RP_F-glass_VZF07332_3.2mm_organic_XQ" },
+      { name: "Bluewhale", releaseTime: "", rp: "", beTestRp: "6010008C0V/A-BSH_RawMaterial_RP_F-glass_VZF07332_G_3.2mm_Organic_BW" }
+    ]
+  },
+  {
+    code: "VZF09346",
+    name: "Metallic Grey",
+    color: "#8C8C8C",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "2/28/2025", rp: "60100060PB/C-Glass door panel BO VZF09346", beTestRp: "6010005DWB-BE_Printed Glass Metallic Grey VZF09346_FH" },
+      { name: "Xiuqiang", releaseTime: "4/1/2025", rp: "6010007A2Q/B-Glass door panel EP85 BO VZF09346", beTestRp: "6010004IDM/B-BE_Printed Glass metallic gray VZF09346" },
+      { name: "Sinca", releaseTime: "", rp: "", beTestRp: "6010008C0Z/A-BSH_RawMaterial_RP_F-glass_VZF09346_3.2mm_organic_SI" },
+      { name: "Bluewhale", releaseTime: "", rp: "", beTestRp: "6010007Z6S/A-BSH_RawMaterial_RP_F-glass_VZF09346_3.2mm_Organic_BW" }
+    ]
+  },
+  {
+    code: "VZF05107",
+    name: "Dark Lake",
+    color: "#1A3A4A",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "10/23/2026", rp: "60100087AV/A-Glass door panel 70 p-fit Entry VZF05107", beTestRp: "6010005UPC/B-BE_Printed Glass Dark lake VZF05107_FH" },
+      { name: "Xiuqiang", releaseTime: "10/23/2024", rp: "6010005KSV/D-Glass door panel SE VZF05107", beTestRp: "6010004JHI/B-BE_Printed Glass dark lake VZF05107" },
+      { name: "Sinca", releaseTime: "", rp: "", beTestRp: "6010008C0X/A-BSH_RawMaterial_RP_F-glass_VZF05107_3.2mm_organic_SI" },
+      { name: "Bluewhale", releaseTime: "", rp: "", beTestRp: "6010007Z6R/A-BSH_RawMaterial_RP_F-glass_VZF05107_3.2mm_Organic_BW" }
+    ]
+  },
+  {
+    code: "RAL9005",
+    name: "Black",
+    color: "#1A1A1A",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "3/24/2026", rp: "6010007YVU/A-Glass door panel 90 slot-in RAL9005", beTestRp: "6010003UC7/A-BE_Printed Glass Jet black RAL9005 and jet black with jet grey RAL9005+RAL9004" },
+      { name: "Xiuqiang", releaseTime: "12/11/2024", rp: "6010006TYI/B-Glass door panel SE RAL9005", beTestRp: "601000754W/A-BE_Printed Glass Black RAL9005_XQ" },
+      { name: "Sinca", releaseTime: "", rp: "", beTestRp: "60100016ZU/A-Printed Door Glass Black with Spun gold Line(RAL9005+VZF01035) and Black(RAL9005)" },
+      { name: "Bluewhale", releaseTime: "6/5/2026", rp: "6010008048/A-90 P-fit Glass inlay RAL9005_Blue whale", beTestRp: "6010007Z6P/A-BSH_RawMaterial_RP_F-glass_RAL9005_3.2mm_Organic_BW" }
+    ]
+  },
+  {
+    code: "VZF09363",
+    name: "Diamond Black-W",
+    color: "#0D0D0D",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "4/12/2026", rp: "6010006NPS/A-Glass door panel SE VZF09363", beTestRp: "60100056EL/A-BE_Printed Glass Diamond Black-W with Grey Stone VZF09363+RAL8019_FH" },
+      { name: "Sinca", releaseTime: "", rp: "", beTestRp: "6010005RE5/A-BE_Printed Glass Diamond Black-W with Grey Stone VZF09363+RAL8019_SI" }
+    ]
+  },
+  {
+    code: "VZF05121",
+    name: "Dark lake texture",
+    color: "#2A4A5A",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "", rp: "", beTestRp: "6010005CU2/A-BE_Printed Glass Dark Lake Texture VZF05121_FH" },
+      { name: "Sinca", releaseTime: "2/21/2024", rp: "6010005UWK/A-SBS NF 2.0_Glass door panel SE VZF05121 Dark Lake Texture UV", beTestRp: "6010004FEH/A-Printed Glass texture dark lake VZF05121_SI" }
+    ]
+  },
+  {
+    code: "VZF07281",
+    name: "Metallic Grey matt PVD",
+    color: "#7A7A7A",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "6/5/2024", rp: "6010006TYL/B-Glass door panel BO VZF07281", beTestRp: "6010006W1R/A-BE_Printed Glass Metallic Grey Matt PVD VZF07281_FH" },
+      { name: "Sinca", releaseTime: "10/10/2023", rp: "6010006CX0/B-SBS NF 2.0_Glass door panel BO VZF07281 Meatllic Grey matt PVD", beTestRp: "60100057FQ/A-BE_Printed Glass Metallic Grey Matt PVD VZF07281_SI" }
+    ]
+  },
+  {
+    code: "VZF07351_GT",
+    name: "Stellar Silver Matt",
+    color: "#B8B8B8",
+    suppliers: [
+      { name: "Fanhua", releaseTime: "", rp: "", beTestRp: "6010007Z6H/A-BSH_RawMaterial_RP_F-glass_VZF07351 GT02_3.2mm_Organic_FH" },
+      { name: "Xiuqiang", releaseTime: "", rp: "", beTestRp: "6010007Z63/A-BSH_RawMaterial_RP_F-glass_VZF07351 GT01_3.2mm_Organic_XQ" }
+    ]
+  }
+];
+
+// State
+let currentFilter = 'all';
+let currentView = 'table';
+let searchQuery = '';
+let selectedColor = null;
+let isExactMatch = false; // Flag to indicate if we're doing an exact match
+
+// Initialize
+function init() {
+  generateColorSwatches();
+  populateSupplierFilter();
+  updateStats();
+  renderResults();
+  setupEventListeners();
+}
+
+// Generate color swatches based on current filter
+function generateColorSwatches() {
+  const container = document.getElementById('colorSwatches');
+  
+  // Filter colors based on current supplier filter
+  const filteredColors = currentFilter === 'all' 
+    ? colorData 
+    : colorData.filter(item => item.suppliers.some(s => s.name === currentFilter));
+  
+  container.innerHTML = filteredColors.map(item => `
+    <div class="flex flex-col items-center gap-2 cursor-pointer" data-code="${item.code}">
+      <div class="color-swatch" style="background-color: ${item.color};" title="${item.name} (${item.code})"></div>
+      <span class="text-xs text-neutral-600 font-medium font-mono">${item.code}</span>
+    </div>
+  `).join('');
+  
+  container.querySelectorAll('[data-code]').forEach(el => {
+    el.addEventListener('click', () => {
+      const code = el.dataset.code;
+      const swatch = el.querySelector('.color-swatch');
+      
+      // Remove active from all
+      container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      
+      if (selectedColor === code) {
+        selectedColor = null;
+        document.getElementById('searchInput').value = '';
+        isExactMatch = false;
+      } else {
+        selectedColor = code;
+        swatch.classList.add('active');
+        document.getElementById('searchInput').value = code;
+        isExactMatch = true; // Set exact match flag when selecting from color swatches
+      }
+      
+      searchQuery = document.getElementById('searchInput').value.toLowerCase();
+      renderResults();
+    });
+  });
+}
+
+// Populate supplier filter
+function populateSupplierFilter() {
+  const suppliers = [...new Set(colorData.flatMap(item => item.suppliers.map(s => s.name)))];
+  const select = document.getElementById('supplierFilter');
+  suppliers.forEach(supplier => {
+    const option = document.createElement('option');
+    option.value = supplier;
+    option.textContent = supplier;
+    select.appendChild(option);
+  });
+}
+
+// Update stats
+function updateStats() {
+  const filtered = getFilteredData();
+  document.getElementById('totalCount').textContent = filtered.length;
+}
+
+// Get filtered data
+function getFilteredData() {
+  let filtered = [...colorData];
+  
+  // Search filter
+  if (searchQuery) {
+    if (isExactMatch) {
+      // Exact match for color code when selected from color swatches
+      filtered = filtered.filter(item => 
+        item.code.toLowerCase() === searchQuery
+      );
+    } else {
+      // Partial match for manual search
+      filtered = filtered.filter(item => 
+        item.code.toLowerCase().includes(searchQuery) ||
+        item.name.toLowerCase().includes(searchQuery) ||
+        item.suppliers.some(s => 
+          s.name.toLowerCase().includes(searchQuery) ||
+          s.rp.toLowerCase().includes(searchQuery) ||
+          s.beTestRp.toLowerCase().includes(searchQuery)
+        )
+      );
+    }
+  }
+  
+  // Quick filter
+  if (currentFilter !== 'all') {
+    filtered = filtered.filter(item => 
+      item.suppliers.some(s => s.name === currentFilter)
+    );
+  }
+  
+  // Supplier filter
+  const supplierFilter = document.getElementById('supplierFilter').value;
+  if (supplierFilter) {
+    filtered = filtered.filter(item => 
+      item.suppliers.some(s => s.name === supplierFilter)
+    );
+  }
+  
+  // Sort
+  const sortFilter = document.getElementById('sortFilter').value;
+  switch(sortFilter) {
+    case 'code-asc':
+      filtered.sort((a, b) => a.code.localeCompare(b.code));
+      break;
+    case 'code-desc':
+      filtered.sort((a, b) => b.code.localeCompare(a.code));
+      break;
+    case 'date-desc':
+      filtered.sort((a, b) => {
+        const dateA = Math.max(...a.suppliers.map(s => new Date(s.releaseTime)));
+        const dateB = Math.max(...b.suppliers.map(s => new Date(s.releaseTime)));
+        return dateB - dateA;
+      });
+      break;
+    case 'date-asc':
+      filtered.sort((a, b) => {
+        const dateA = a.suppliers.length > 0 ? Math.min(...a.suppliers.map(s => new Date(s.releaseTime))) : Infinity;
+        const dateB = b.suppliers.length > 0 ? Math.min(...b.suppliers.map(s => new Date(s.releaseTime))) : Infinity;
+        return dateA - dateB;
+      });
+      break;
+    case 'name-asc':
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+  }
+  
+  return filtered;
+}
+
+// Get active supplier filter
+function getActiveSupplierFilter() {
+  // Check quick filter first
+  if (currentFilter !== 'all') {
+    return currentFilter;
+  }
+  
+  // Then check dropdown filter
+  const supplierFilter = document.getElementById('supplierFilter').value;
+  if (supplierFilter) {
+    return supplierFilter;
+  }
+  
+  return null;
+}
+
+// Render results
+function renderResults() {
+  const filtered = getFilteredData();
+  const tableView = document.getElementById('tableView');
+  const cardView = document.getElementById('cardView');
+  const noResults = document.getElementById('noResults');
+  
+  if (filtered.length === 0) {
+    tableView.classList.add('hidden');
+    cardView.classList.add('hidden');
+    noResults.classList.remove('hidden');
+    noResults.classList.add('block');
+    updateStats();
+    return;
+  }
+  
+  noResults.classList.add('hidden');
+  
+  if (currentView === 'table') {
+    tableView.classList.remove('hidden');
+    cardView.classList.add('hidden');
+    renderTable(filtered);
+  } else {
+    tableView.classList.add('hidden');
+    cardView.classList.remove('hidden');
+    cardView.classList.add('grid');
+    renderCards(filtered);
+  }
+  
+  updateStats();
+}
+
+// Render table
+function renderTable(data) {
+  const tbody = document.getElementById('resultsTable');
+  const activeSupplier = getActiveSupplierFilter();
+  
+  tbody.innerHTML = data.map(item => {
+    // Filter suppliers based on active filter
+    const displaySuppliers = activeSupplier 
+      ? item.suppliers.filter(s => s.name === activeSupplier)
+      : item.suppliers;
+    
+    // Only show supplier names in the Supplier column
+    const suppliersHtml = displaySuppliers.length > 0 
+      ? displaySuppliers.map((s, i) => `
+          ${i > 0 ? '<div class="mt-1"></div>' : ''}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">${s.name}</span>
+        `).join('')
+      : '<span class="text-neutral-400 text-sm italic">No supplier information</span>';
+    
+    // Only show release times for the filtered suppliers
+    const releaseTimesHtml = displaySuppliers.length > 0 
+      ? displaySuppliers.map(s => `<div class="text-sm text-neutral-600">${s.releaseTime || '--'}</div>`).join('')
+      : '<span class="text-neutral-400 text-sm">--</span>';
+    
+    // Only show RP information for the filtered suppliers
+    const rpHtml = displaySuppliers.length > 0
+      ? displaySuppliers.map(s => `<div class="text-xs text-neutral-600 font-mono break-all mb-2">${s.rp || '--'}</div>`).join('')
+      : '<span class="text-neutral-400 text-sm">--</span>';
+    
+    // Only show BE Test RP information for the filtered suppliers
+    const beTestRpHtml = displaySuppliers.length > 0
+      ? displaySuppliers.map(s => `<div class="text-xs text-neutral-600 font-mono break-all mb-2">${s.beTestRp || '--'}</div>`).join('')
+      : '<span class="text-neutral-400 text-sm">--</span>';
+    
+    return `
+      <tr class="table-row cursor-pointer" data-code="${item.code}">
+        <td class="px-6 py-4">
+          <div class="color-swatch" style="background-color: ${item.color};"></div>
+        </td>
+        <td class="px-6 py-4">
+          <span class="font-mono text-sm font-semibold text-neutral-800">${highlightMatch(item.code)}</span>
+        </td>
+        <td class="px-6 py-4">
+          <div>
+            <div class="text-sm font-medium text-neutral-800">${highlightMatch(item.name)}</div>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <div class="flex flex-wrap gap-1">
+            ${suppliersHtml}
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          ${releaseTimesHtml}
+        </td>
+        <td class="px-6 py-4">
+          ${rpHtml}
+        </td>
+        <td class="px-6 py-4">
+          ${beTestRpHtml}
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  // Add click handlers
+  tbody.querySelectorAll('tr').forEach(row => {
+    row.addEventListener('click', () => showDetail(row.dataset.code));
+  });
+}
+
+// Render cards
+function renderCards(data) {
+  const container = document.getElementById('cardView');
+  const activeSupplier = getActiveSupplierFilter();
+  
+  container.innerHTML = data.map(item => {
+    // Filter suppliers based on active filter
+    const displaySuppliers = activeSupplier 
+      ? item.suppliers.filter(s => s.name === activeSupplier)
+      : item.suppliers;
+    
+    const suppliersHtml = displaySuppliers.length > 0 
+      ? displaySuppliers.map(s => `
+          <div class="bg-neutral-50 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">${s.name}</span>
+              <span class="text-xs text-neutral-500">${s.releaseTime || '--'}</span>
+            </div>
+            <div class="text-xs text-neutral-600 font-mono break-all">${s.rp || '--'}</div>
+            <div class="text-xs text-neutral-600 font-mono break-all pt-2 border-t border-neutral-200">
+              <span class="font-semibold text-primary">BE Test RP:</span> ${s.beTestRp || '--'}
+            </div>
+          </div>
+        `).join('')
+      : '<div class="text-center py-4 text-neutral-400 text-sm">No supplier information</div>';
+    
+    return `
+      <div class="bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all cursor-pointer border border-neutral-100" data-code="${item.code}">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="color-swatch" style="background-color: ${item.color};"></div>
+            <div>
+              <h3 class="font-bold text-neutral-800">${highlightMatch(item.name)}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="mb-4">
+          <span class="text-xs text-neutral-500 uppercase tracking-wide">Color Code</span>
+          <p class="font-mono text-sm font-semibold text-neutral-800">${highlightMatch(item.code)}</p>
+        </div>
+        <div class="space-y-2">
+          <span class="text-xs text-neutral-500 uppercase tracking-wide">Supplier Information</span>
+          ${suppliersHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  container.querySelectorAll('[data-code]').forEach(card => {
+    card.addEventListener('click', () => showDetail(card.dataset.code));
+  });
+}
+
+// Highlight search match
+function highlightMatch(text) {
+  if (!searchQuery) return text;
+  const regex = new RegExp(`(${searchQuery})`, 'gi');
+  return text.replace(regex, '<mark class="bg-accent/30 text-neutral-800 px-1 rounded">$1</mark>');
+}
+
+// Show detail modal
+function showDetail(code) {
+  const item = colorData.find(c => c.code === code);
+  if (!item) return;
+  
+  const modal = document.getElementById('detailModal');
+  const content = document.getElementById('modalContent');
+  
+  const suppliersHtml = item.suppliers.length > 0 
+    ? item.suppliers.map(s => `
+        <div class="bg-neutral-50 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+              <i class="fas fa-industry mr-2"></i>${s.name}
+            </span>
+            <span class="text-sm text-neutral-500">
+              <i class="fas fa-calendar mr-1"></i>${s.releaseTime || '--'}
+            </span>
+          </div>
+          <div class="text-sm text-neutral-600 font-mono break-all bg-white rounded-lg p-3 border border-neutral-200">
+            ${s.rp || '--'}
+          </div>
+          <div class="text-sm text-neutral-600 font-mono break-all bg-white rounded-lg p-3 border border-neutral-200">
+            <span class="font-semibold text-primary">BE Test RP:</span> ${s.beTestRp || '--'}
+          </div>
+        </div>
+      `).join('')
+    : '<div class="text-center py-8 text-neutral-400">No supplier information available</div>';
+  
+  content.innerHTML = `
+    <div class="space-y-6">
+      <div class="flex items-center gap-4">
+        <div class="color-swatch" style="background-color: ${item.color}; width: 60px; height: 60px;"></div>
+        <div>
+          <h2 class="text-2xl font-bold text-neutral-800">${item.name}</h2>
+          <p class="text-neutral-500">Color Code: ${item.code}</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-neutral-50 rounded-xl p-4">
+          <span class="text-xs text-neutral-500 uppercase tracking-wide">Color Code</span>
+          <p class="font-mono text-lg font-semibold text-neutral-800">${item.code}</p>
+        </div>
+        <div class="bg-neutral-50 rounded-xl p-4">
+          <span class="text-xs text-neutral-500 uppercase tracking-wide">Hex Value</span>
+          <p class="font-mono text-lg font-semibold text-neutral-800">${item.color}</p>
+        </div>
+      </div>
+      
+      <div>
+        <h3 class="text-sm font-semibold text-neutral-700 mb-3">
+          <i class="fas fa-industry mr-2"></i>Supplier Information
+        </h3>
+        <div class="space-y-3">
+          ${suppliersHtml}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+// Setup event listeners
+function setupEventListeners() {
+  // Search input
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', (e) => {
+    searchQuery = e.target.value.toLowerCase();
+    
+    // Clear color selection and exact match flag when manually typing
+    selectedColor = null;
+    isExactMatch = false;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    
+    renderResults();
+  });
+  
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    searchInput.value = '';
+    searchQuery = '';
+    selectedColor = null;
+    isExactMatch = false;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    renderResults();
+  });
+  
+  // Quick filters
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter = chip.dataset.filter;
+      
+      // Clear supplier dropdown when using quick filter
+      document.getElementById('supplierFilter').value = '';
+      
+      // Clear color selection when changing supplier filter
+      selectedColor = null;
+      isExactMatch = false;
+      document.getElementById('searchInput').value = '';
+      searchQuery = '';
+      
+      // Regenerate color swatches based on new filter
+      generateColorSwatches();
+      
+      renderResults();
+    });
+  });
+  
+  // Supplier filter
+  document.getElementById('supplierFilter').addEventListener('change', (e) => {
+    // Clear quick filter when using dropdown
+    if (e.target.value) {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('.filter-chip[data-filter="all"]').classList.add('active');
+      currentFilter = e.target.value;
+    } else {
+      currentFilter = 'all';
+    }
+    
+    // Clear color selection when changing supplier filter
+    selectedColor = null;
+    isExactMatch = false;
+    document.getElementById('searchInput').value = '';
+    searchQuery = '';
+    
+    // Regenerate color swatches based on new filter
+    generateColorSwatches();
+    
+    renderResults();
+  });
+  
+  // Sort filter
+  document.getElementById('sortFilter').addEventListener('change', renderResults);
+  
+  // View toggle
+  document.getElementById('viewTable').addEventListener('click', () => {
+    currentView = 'table';
+    document.getElementById('viewTable').classList.add('bg-primary', 'text-white');
+    document.getElementById('viewTable').classList.remove('bg-neutral-100', 'text-neutral-600');
+    document.getElementById('viewCard').classList.remove('bg-primary', 'text-white');
+    document.getElementById('viewCard').classList.add('bg-neutral-100', 'text-neutral-600');
+    renderResults();
+  });
+  
+  document.getElementById('viewCard').addEventListener('click', () => {
+    currentView = 'card';
+    document.getElementById('viewCard').classList.add('bg-primary', 'text-white');
+    document.getElementById('viewCard').classList.remove('bg-neutral-100', 'text-neutral-600');
+    document.getElementById('viewTable').classList.remove('bg-primary', 'text-white');
+    document.getElementById('viewTable').classList.add('bg-neutral-100', 'text-neutral-600');
+    renderResults();
+  });
+  
+  // Close modal
+  document.getElementById('closeModal').addEventListener('click', () => {
+    document.getElementById('detailModal').classList.add('hidden');
+    document.getElementById('detailModal').classList.remove('flex');
+  });
+  
+  // Click outside modal to close
+  document.getElementById('detailModal').addEventListener('click', (e) => {
+    if (e.target.id === 'detailModal') {
+      document.getElementById('detailModal').classList.add('hidden');
+      document.getElementById('detailModal').classList.remove('flex');
+    }
+  });
+  
+  // ESC to close modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('detailModal').classList.add('hidden');
+      document.getElementById('detailModal').classList.remove('flex');
+    }
+  });
+}
+
+// Initialize on load
+init();
+</script>
+
+</body>
+</html>
